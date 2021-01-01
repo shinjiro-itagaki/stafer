@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "allowJs": false,
+        "target": "es5",
+        "lib": ["dom", "es2019"],
+        "noImplicitAny": false,
+        "jsx": "react",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "incremental": true,
+        "outDir": "./public/js",
+        "strict": true,
+        "alwaysStrict": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
