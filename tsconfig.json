@@ -12,10 +12,15 @@
         "incremental": true,
         "outDir": "./public/js",
         "strict": true,
+        "moduleResolution": "node",
         "alwaysStrict": true
     },
     "include": [
-        "src/**/*"
+//        "src/**/*"
+        "src/index.ts"
+    ],
+    "typeRoots": [
+        "node_modules/@types"
     ],
     "exclude": [
         "node_modules"
