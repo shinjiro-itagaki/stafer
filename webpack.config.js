@@ -26,7 +26,7 @@ class MyPlugin {
       if(data) {
         const jsdom = new JSDOM(data);
         jsdom.window.document.querySelectorAll('script').forEach(function(tag){
-          console.log(tag);
+          // console.log(tag);
           const src = tag.src;
           const jspath = outdir + "/" + src;
           const stats = fs.statSync(jspath);

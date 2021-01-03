@@ -7,7 +7,7 @@ declare global {
 
 import {
   mountApp
-} from "./components/app";
+} from "./components/App";
 
 const w: any = window;
 
