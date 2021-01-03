@@ -46,13 +46,12 @@ export class LocalStorageBackend implements ModelBackend {
   }
 
   protected getAllRecordIds(tablename: string): ReadonlyArray<string> {
-    const idx: Object = this.loadRawData("index", tablename) || {};
-    console.log(idx);
+    const idx: Object = this.loadRawData(tablename, "index") || {};
     return Object.keys(idx || {});
   }
 
   protected addRecordKeys(tablename: string, ids: ReadonlyArray<string>): boolean {
-    const idx: Object = this.loadRawData("index", tablename) || {};
+    const idx: Object = this.loadRawData(tablename, "index") || {};
     const key: string = this.getRecordKey(tablename, "index");
     ids.forEach(function(id){
       idx[id]=Date.now();
@@ -65,7 +64,7 @@ export class LocalStorageBackend implements ModelBackend {
   }
 
   protected removeRecordKeys(tablename: string, ids: ReadonlyArray<string>): boolean {
-    const idx: Object = this.loadRawData("index", tablename) || {};
+    const idx: Object = this.loadRawData(tablename, "index") || {};
     const key: string = this.getRecordKey(tablename, "index");
     ids.forEach(function(id){
       delete idx[id];
@@ -80,7 +79,6 @@ export class LocalStorageBackend implements ModelBackend {
     const key: string = this.getRecordKey(tablename, id);
     const item: string | null = localStorage.getItem(key);
     const rtn: Object | null = (item ? JSON.parse(item) : null);
-    console.log(rtn);
     return rtn;
   }
   
