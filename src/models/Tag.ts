@@ -1,8 +1,8 @@
-import { Model } from "./../../lib/Model";
+import { DB } from "./../../lib/DB";
 
 export module Tag {
   
-  class TagClass implements Model.Class<Entity> {
+  class TagClass implements DB.Class<Entity> {
     public readonly tableName = "tags";
 
     public toObject(entity: Entity): Object {
@@ -16,9 +16,7 @@ export module Tag {
 
   const klass: TagClass = new TagClass();
 
-  export interface Entity extends Model.Entity {
+  export interface Entity extends DB.Entity {
   };
-
-  export type Record = Model.Record<Entity>;
 }
 

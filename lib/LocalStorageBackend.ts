@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
-import { ModelBackend } from "./ModelBackend";
+import { DBBackend } from "./DBBackend";
 
-export class LocalStorageBackend implements ModelBackend {
+export class LocalStorageBackend implements DBBackend {
 
   public delete_(tablename: string, id: string): boolean {
     const key: string = this.getRecordKey(tablename,id);
