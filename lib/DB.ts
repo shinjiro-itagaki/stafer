@@ -52,6 +52,10 @@ export module DB {
     const res: Object | null = getBackend().update(klass.tableName, record.id, klass.toObject(record.entity));
     return res ? {id: record.id, entity: klass.initialize(res)} : null;
   }
+
+  export function delete_<E extends Entity>(klass: Class<E>, id: string): boolean {
+    return getBackend().delete(klass.tableName, id);
+  }
 }
 
 // https://python5.com/q/iribcvbi
