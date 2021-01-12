@@ -11,9 +11,10 @@ export interface Props extends React.Props<{}> {
 }
 
 const App: React.FunctionComponent<Props> = (props: Props) => {
-  const [initMembers, setMembers] = React.useState<ReadonlyArray<DB.Record<Member.Entity>>>([]);
+  const [initMembers, setMembers] = React.useState<ReadonlyArray<DB.Record<Member.Entity>>>(DB.all(Member.klass));
   function reload(): void{
     // Member.create({name: "dummy"});
+    DB.create(Member.klass, {name: "dummy"});
     // setMembers(DB.all<DB.Record<Member.Entity>>());
     setMembers(DB.all(Member.klass));
   }

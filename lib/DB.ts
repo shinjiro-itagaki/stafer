@@ -1,6 +1,7 @@
 
 import { DBBackend } from "./DBBackend";
 import { LocalStorageBackend } from "./LocalStorageBackend";
+import { IndexedDBBackend } from "./IndexedDBBackend";
 import { v4 as uuid } from "uuid";
 
 export module DB {
@@ -20,6 +21,7 @@ export module DB {
   }
 
   const defaultBackend: DBBackend = new LocalStorageBackend();
+//  const defaultBackend: DBBackend = new IndexedDBBackend();
   var customBackend: DBBackend | null = null;
 
   export function getBackend(): DBBackend {

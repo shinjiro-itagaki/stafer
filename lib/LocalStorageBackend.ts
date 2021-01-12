@@ -1,9 +1,17 @@
 import { v4 as uuid } from "uuid";
-import { DBBackend } from "./DBBackend";
+import { DBBackend , Migration } from "./DBBackend";
 
 export class LocalStorageBackend implements DBBackend {
 
-  public delete_(tablename: string, id: string): boolean {
+  public migrate(migrations: ReadonlyArray<Migration>): boolean {
+    return true;
+  }
+
+  public isPrepared(): boolean {
+    return !!localStorage;
+  }
+
+  public delete(tablename: string, id: string): boolean {
     const key: string = this.getRecordKey(tablename,id);
     localStorage.removeItem(key);
     return this.removeRecordKeys(tablename,[id]);
