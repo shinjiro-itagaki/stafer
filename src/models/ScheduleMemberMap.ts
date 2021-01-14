@@ -5,8 +5,6 @@ export module ScheduleMemberMap {
   class Table extends DB.AbstractTable<Entity> {
     public readonly name: string = "schedule_member_map";
 
-    private cache: ReadonlyArray<DB.Record<Entity>> = [];
-
     public toObject(entity: Entity): Object {
       return entity;
     }
@@ -19,13 +17,12 @@ export module ScheduleMemberMap {
       };
     }
 
-    public all(useCache: boolean = false): ReadonlyArray<DB.Record<Entity>> {
-      this.cache = ([] as DB.Record<Entity>[]).concat(super.all()).sort(function(a: DB.Record<Entity>, b: DB.Record<Entity>){ return b.entity.position - a.entity.position; } );
-      return this.cache;
+    public all(): ReadonlyArray<DB.Record<Entity>> {
+      return ([] as DB.Record<Entity>[]).concat(super.all()).sort(function(a: DB.Record<Entity>, b: DB.Record<Entity>){ return b.entity.position - a.entity.position; } );
     }
 
-    public allOf(schedule_id: string, useCache: boolean = true): ReadonlyArray<DB.Record<Entity>> | null {
-      return this.all(useCache).filter((x: DB.Record<Entity>) => { x.entity.schedule_id == schedule_id });
+    public allOf(schedule_id: string): ReadonlyArray<DB.Record<Entity>> | null {
+      return this.all().filter((x: DB.Record<Entity>) => { x.entity.schedule_id == schedule_id });
     }
   }
 

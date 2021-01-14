@@ -31,20 +31,59 @@ export module DB {
     }
   }
 
-  export interface Table<E extends Entity> {
+  export interface ReadonlyTable<E extends Entity> {
+    all(): ReadonlyArray<Record<E>>;
+    find(id: string): Record<E> | null;
+  }
+
+  export interface Cache<E extends Entity> extends ReadonlyTable<E> {
+    refresh(id: string): Cache<E>;
+  }
+
+  export interface Table<E extends Entity> extends ReadonlyTable<E> {
     readonly name: string;
     toObject(entity: E): Object;
     initialize(obj: Object): E;
-    all(): ReadonlyArray<Record<E>>;
-    find(id: string): Record<E> | null;
     create(e: E): Record<E> | null;
     delete(r: Record<E>): boolean;
+    modify(r: Record<E>): Record<E> | null;
+    readonly cache: Cache<E>;
+  }
+
+  class DefaultCache<E extends Entity> implements Cache<E> {
+
+    private table: ReadonlyTable<E>;
+    private data: ReadonlyArray<Record<E>> | null = null;
+
+    constructor(table: ReadonlyTable<E>){
+      this.table = table;
+    }
+
+    public all(): ReadonlyArray<Record<E>> {
+      return this.data ||= this.table.all();
+    }
+
+    public find(id: string): Record<E> | null {
+      return (this.data ||= this.table.all())?.find((r: Record<E>) => r.id == id) || null;
+    }
+
+    public refresh(id: string): Cache<E> {
+      this.data = this.table.all();
+      return this;
+    }
   }
 
   export abstract class AbstractTable<E extends Entity> implements Table<E> {
     abstract get name(): string;
     public abstract toObject(entity: E): Object;
     public abstract initialize(obj: Object): E;
+
+    private readonly _cache: DefaultCache<E>;
+
+    constructor(){
+      this._cache = new DefaultCache<E>(this);
+    }
+    
     public all(): ReadonlyArray<Record<E>> {
       return all(this);
     }
@@ -56,6 +95,12 @@ export module DB {
     }
     public delete(r: Record<E>): boolean {
       return delete_(this,r.id);
+    }
+    public modify(r: Record<E>): Record<E> | null {
+      return modify(this,r);
+    }
+    public get cache(): Cache<E> {
+      return this._cache;
     }
   }
 

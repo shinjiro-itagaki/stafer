@@ -25,11 +25,8 @@ export module Schedule {
 
   class EntityImpl implements Entity {
     private start: Date = new Date(0);
-    private end: Date = new Date(0);
+    private end  : Date = new Date(0);
 
-    // private _member_map: DB.Record<ScheduleMemberMap.Entity>[] = [];
-    // private _members: DB.Record<Member.Entity>[] | null = null;
-    
     constructor(obj: Object){
       this.start = new Date(Number(obj["start"]));
       this.end   = new Date(Number(obj["end"]));
