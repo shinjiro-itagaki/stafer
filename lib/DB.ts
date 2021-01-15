@@ -38,7 +38,23 @@ export module DB {
 
   export interface ReadonlyTable<E extends Entity> {
     all(): ReadonlyArray<Record<E>>;
+    first(condition?: Object): Record<E>;
     find(id: string): Record<E> | null;
+    mkFilter(condition: Object): (r: Record<E>) => boolean
+  }
+
+  export abstract class AbstractReadonlyTable<E extends Entity> implements ReadonlyTable<E> {
+    abstract all(): ReadonlyArray<Record<E>>;
+    abstract find(id: string): Record<E> | null;
+    abstract mkFilter(condition: Object): (r: Record<E>) => boolean;
+
+    public first(condition?: Object): Record<E> {
+      var all: ReadonlyArray<Record<E>> = this.all();
+      if(condition){
+        all = all.filter(this.mkFilter(condition));
+      }
+      return this.all()[0];
+    }
   }
 
   export interface Cache<E extends Entity> extends ReadonlyTable<E> {
@@ -53,15 +69,20 @@ export module DB {
     delete(r: Record<E>): boolean;
     modify(r: Record<E>): Record<E> | null;
     readonly cache: Cache<E>;
+    afterFind(r: Record<E>): void;
+    afterCreate(r: Record<E>,e: E): void;
+    afterModify(rnew: Record<E>,rold: Record<E>): void;
     afterSave(r: Record<E>): void;
+    firstOrCreate(e: E): Record<E> | null;
   }
 
-  class DefaultCache<E extends Entity> implements Cache<E> {
+  class DefaultCache<E extends Entity> extends AbstractReadonlyTable<E> implements Cache<E> {
 
     private table: ReadonlyTable<E>;
     private data: ReadonlyArray<Record<E>> | null = null;
 
     constructor(table: ReadonlyTable<E>){
+      super();
       this.table = table;
     }
 
@@ -77,9 +98,13 @@ export module DB {
       this.data = this.table.all();
       return this;
     }
+
+    public mkFilter(condition: Object): (r: Record<E>) => boolean {
+      return this.table.mkFilter(condition);
+    }
   }
 
-  export abstract class AbstractTable<E extends Entity> implements Table<E> {
+  export abstract class AbstractTable<E extends Entity> extends AbstractReadonlyTable<E> implements Table<E> {
     abstract get name(): string;
     public abstract toObject(entity: E): Object;
     public abstract initialize(obj: Object): E;
@@ -87,6 +112,7 @@ export module DB {
     private readonly _cache: DefaultCache<E>;
 
     constructor(){
+      super();
       this._cache = new DefaultCache<E>(this);
     }
     
@@ -94,11 +120,21 @@ export module DB {
       return all(this);
     }
     public find(id: string): Record<E> | null {
-      return find(this,id);
+      const rtn : Record<E> | null = find(this,id);
+      if(rtn){
+        this.afterFind(rtn);
+      }
+      return rtn;
     }
+
+    public firstOrCreate(e: E): Record<E> | null {
+      return this.first(e) || this.create(e);
+    }
+
     public create(e: E): Record<E> | null {
       const res: Record<E> | null = create(this,e);
       if(res){
+        this.afterCreate(res,e);
         this.afterSave(res);
       }
       return res;
@@ -109,6 +145,7 @@ export module DB {
     public modify(r: Record<E>): Record<E> | null {
       const res: Record<E> | null = modify(this,r);
       if(res){
+        this.afterModify(res,r);
         this.afterSave(res);
       }
       return res;
@@ -116,6 +153,19 @@ export module DB {
     public get cache(): Cache<E> {
       return this._cache;
     }
+
+    public afterFind(r: Record<E>): void {
+      // do nothing
+    }
+
+    public afterCreate(r: Record<E>,e: E): void {
+      // do nothing
+    }
+
+    public afterModify(rnew: Record<E>,rold: Record<E>): void {
+      // do nothing
+    }
+
     public afterSave(r: Record<E>): void {
       // do nothing
     }

@@ -19,16 +19,38 @@ export module Schedule {
       loadMembersMap(r);
     }
 
-    public afterSave(r: DB.Record<Entity>): void {
-      r.entity.members.forEach(function(x: ScheduleMemberMap.Entity){
-        const rec : DB.Record<ScheduleMemberMap.Entity> | null = ScheduleMemberMap.table.findBy({member_id: x.member_id, schedule_id: r.id});
+    public afterCreate(r: DB.Record<Entity>,e: Entity): void {
+      this.saveMembersMap(r.id,e);
+    }
+
+    public afterModify(rnew: DB.Record<Entity>,rold: DB.Record<Entity>): void {
+      this.saveMembersMap(rnew.id, rold.entity);
+    }
+
+    private saveMembersMap(schedule_id: string, e: Entity) {
+      e.members.forEach(function(x: ScheduleMemberMap.Entity){
+        const rec : DB.Record<ScheduleMemberMap.Entity> | null = ScheduleMemberMap.table.findBy({member_id: x.member_id, schedule_id: schedule_id});
         if(rec){
           rec.entity.position = x.position;
           rec.save();
+          rec.entity.position
         }else{
-          ScheduleMemberMap.table.create(x);
+          ScheduleMemberMap.table.create({...x, schedule_id: schedule_id});
         }
-      });
+      });      
+    }
+
+    public afterSave(r: DB.Record<Entity>): void {
+    }
+
+    public mkFilter(cond: Object): (r: DB.Record<Entity>) => boolean {
+      return function(r: DB.Record<Entity>){
+        return true;
+        // const startDate: Date | undefined = cond["startDate"];
+        // const endDate  : Date | undefined = cond["endDate"];
+        // return ( startDate == undefined ? true : r.entity.startDate ) 
+        //   && ( position == undefined ? true : Number(position) == r.entity.position )
+      }
     }
   }
 
@@ -160,21 +182,6 @@ export module Schedule {
   }
 
   var _current: DB.Record<Entity> | null = null;
-
-  // function members(record: DB.Record<Entity>): DB.Record<Member.Entity>[] {
-  //   return ScheduleMemberMap.table.all()
-  //     .filter(function(m: DB.Record<ScheduleMemberMap.Entity>): boolean { return m.entity.schedule_id == record.id; })
-  //     .map((m) => Member.table.find(m.entity.member_id))
-  //     .filter((m): m is DB.Record<Member.Entity> => !!m)
-  // }
-
-  // function getScheduleMemberMapsOf(record: DB.Record<Entity>, oncache: boolean): ReadonlyArray<DB.Record<ScheduleMemberMap.Entity>> {
-  //   return ScheduleMemberMap.table.allOf(record,oncache) || [];
-  // }
-
-  // function getMemberMapOf(record: DB.Record<Entity>, member_id: string, oncache: boolean): DB.Record<ScheduleMemberMap.Entity> | null {
-  //   return getScheduleMemberMapsOf(record,oncache).find((x) => x.entity.member_id == member_id) || ScheduleMemberMap.table.create({schedule_id: record.id, member_id: member_id, position: 1});
-  // }
 
   export function current(): DB.Record<Entity> | null {
     const now: Date = new Date();

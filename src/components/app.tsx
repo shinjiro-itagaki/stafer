@@ -71,6 +71,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   function upPosition(member_id: string): void {
     if(schedule){
       schedule.entity.upPositionOf(member_id);
+      // alert(schedule.entity.members.length);
       schedule.save();
     }
   }
@@ -78,6 +79,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   function downPosition(member_id: string): void {
     if(schedule){
       schedule.entity.downPositionOf(member_id);
+      schedule.save();
     }
   }
 

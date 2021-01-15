@@ -6,17 +6,27 @@ export module Tag {
     public readonly name: string = "tags";
 
     public toObject(entity: Entity): Object {
-      return {};
+      return {label: entity.label};
     }
 
     public initialize(obj: Object): Entity {
-      return {};
-    }    
+      return {label: String(obj["label"] || "")};
+    }
+
+    public mkFilter(cond: Object): (r: DB.Record<Entity>) => boolean {
+      return function(r: DB.Record<Entity>){
+        const label    : string | undefined = cond["label"];
+//        const position: number | undefined = cond["position"];
+        return ( label == undefined ? true : String(label) == r.entity.label ) 
+//          && ( position == undefined ? true : Number(position) == r.entity.position )
+      }
+    }
   }
 
   const table: Table = new Table();
 
   export interface Entity extends DB.Entity {
+    label: string;
   };
 }
 
