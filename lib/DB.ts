@@ -121,9 +121,6 @@ export module DB {
     }
     public find(id: string): Record<E> | null {
       const rtn : Record<E> | null = find(this,id);
-      if(rtn){
-        this.afterFind(rtn);
-      }
       return rtn;
     }
 
@@ -158,6 +155,10 @@ export module DB {
       // do nothing
     }
 
+    public afterInitialize(r: Record<E>): void {
+      // do nothing
+    }
+
     public afterCreate(r: Record<E>,e: E): void {
       // do nothing
     }
@@ -180,7 +181,9 @@ export module DB {
   }
 
   function newRecord<E extends Entity>(args: NewRecordArg<E>): Record<E> {
-    return new DefaultRecord(args);
+    const rec : Record<E> = new DefaultRecord(args);
+    args.table.afterFind(rec);
+    return rec;
   }
 
   export function all<E extends Entity>(table: Table<E>): ReadonlyArray<Record<E>> {

@@ -8,7 +8,7 @@ export module ScheduleMemberMap {
 
     public toObject(entity: Entity): Object {
       return {
-        meber_id: entity.member_id,
+        member_id: entity.member_id,
         schedule_id: entity.schedule_id,
         position: entity.position,
       };
@@ -28,7 +28,7 @@ export module ScheduleMemberMap {
     }
 
     public allOf(schedule: DB.Record<Schedule.Entity>, oncache: boolean = false): ReadonlyArray<DB.Record<Entity>> {
-      return (oncache ? this.cache.all() : this.all()).filter((x: DB.Record<Entity>) => { x.entity.schedule_id == schedule.id });
+      return (oncache ? this.cache.all() : this.all()).filter((x: DB.Record<Entity>): boolean => { return x.entity.schedule_id == schedule.id; });
     }
 
     public findBy(args: {member_id: string, schedule_id: string}): DB.Record<Entity> | null {

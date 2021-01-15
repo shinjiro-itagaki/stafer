@@ -23,7 +23,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   if(schedule){
     allMembers.forEach((x,idx) => {
       // schedule.entity.setMember(x,{position: allMembers.length - idx});
-      schedule.entity.setMember(x);
+      schedule.entity.setMember(schedule,x);
     })
   }
 
@@ -44,7 +44,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   }
 
   function onChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
-    if(schedule){ schedule.entity.setMember(m, {checked: checked, position: position}) };
+    if(schedule){ schedule.entity.setMember(schedule, m, {checked: checked, position: position}) };
   }
 
   var form : HTMLFormElement  | null = null;
@@ -71,7 +71,6 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   function upPosition(member_id: string): void {
     if(schedule){
       schedule.entity.upPositionOf(member_id);
-      // alert(schedule.entity.members.length);
       schedule.save();
     }
   }

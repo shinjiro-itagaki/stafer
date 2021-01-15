@@ -17,6 +17,9 @@ export interface Props extends React.Props<{}> {
 }
 
 export const MembersView: React.FunctionComponent<Props> = (props: Props) => {
+  var form4mkuser    : HTMLFormElement   | null = null;
+  var input_username : HTMLInputElement  | null = null;
+  
   const allMembers: ReadonlyArray<[DB.Record<Member.Entity> , ScheduleMemberMap.Entity | undefined]>
     = ([] as DB.Record<Member.Entity>[]).concat(props.allMembers)
     .map(function(x: DB.Record<Member.Entity>): [DB.Record<Member.Entity> , ScheduleMemberMap.Entity | undefined] {
@@ -77,10 +80,47 @@ export const MembersView: React.FunctionComponent<Props> = (props: Props) => {
             </tr>);
   });
 //       <th>member ID</th>
+
+
+  function validateCreatingMember(): Member.Entity | null {
+    if(!form4mkuser){
+      return null;
+    }
+    if(!form4mkuser.reportValidity()){
+      return null;
+    }
+    if(!input_username){
+      return null;
+    }
+    return {name: input_username.value, position: 1};
+  }
+
+  function onSubmitCreatingMember(): boolean {
+    const data : Member.Entity | null = validateCreatingMember();
+    if(!data){
+      return false;
+    }
+
+    if(!!Member.table.create(data)){
+      props.reload();
+      if(form4mkuser){
+        form4mkuser.reset();
+      }
+      return true;
+    }else{
+      return false;
+    }
+  }
+
   return(
       <div>
       <div style={{width: "100%", height: "40px", backgroundColor: "blue"}} onClick={props.reload}></div>
-      <form>
+      <form ref={(e: HTMLFormElement) => form4mkuser = e}>
+      <fieldset>
+      <legend>メンバーの新規作成</legend>
+      <input type="text" ref={(e: HTMLInputElement) => input_username = e} required={true} />
+      <input type="button" value="作成" onClick={onSubmitCreatingMember} />
+      </fieldset>
       </form>
 
       <table>

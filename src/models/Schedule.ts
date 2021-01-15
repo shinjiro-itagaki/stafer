@@ -20,22 +20,23 @@ export module Schedule {
     }
 
     public afterCreate(r: DB.Record<Entity>,e: Entity): void {
-      this.saveMembersMap(r.id,e);
+      this.saveMembersMap(r,e);
     }
 
     public afterModify(rnew: DB.Record<Entity>,rold: DB.Record<Entity>): void {
-      this.saveMembersMap(rnew.id, rold.entity);
+      this.saveMembersMap(rnew, rold.entity);
     }
 
-    private saveMembersMap(schedule_id: string, e: Entity) {
+    private saveMembersMap(schedule: DB.Record<Entity>, e: Entity) {
       e.members.forEach(function(x: ScheduleMemberMap.Entity){
-        const rec : DB.Record<ScheduleMemberMap.Entity> | null = ScheduleMemberMap.table.findBy({member_id: x.member_id, schedule_id: schedule_id});
+        const rec : DB.Record<ScheduleMemberMap.Entity> | null = ScheduleMemberMap.table.findBy({member_id: x.member_id, schedule_id: schedule.id});
         if(rec){
           rec.entity.position = x.position;
           rec.save();
-          rec.entity.position
+          // alert(rec.save());
         }else{
-          ScheduleMemberMap.table.create({...x, schedule_id: schedule_id});
+          // alert(JSON.stringify(x));
+          ScheduleMemberMap.table.create(ScheduleMemberMap.table.initialize({...x, schedule_id: schedule.id}));
         }
       });      
     }
@@ -64,8 +65,8 @@ export module Schedule {
     downPositionOf(member_id: string): void;
     findMemberMapOf(member_id: string): ScheduleMemberMap.Entity | undefined;
     getPositionOf(member_id: string): number | undefined;
-    setMember(member: DB.Record<Member.Entity>, options?: {checked?: boolean, position?: number}): void;
-    setMemberById(member_id: string, options?: {checked?: boolean, position?: number}): void;
+    setMember(r: DB.Record<Entity>, member: DB.Record<Member.Entity>, options?: {checked?: boolean, position?: number}): void;
+    setMemberById(r: DB.Record<Entity>, member_id: string, options?: {checked?: boolean, position?: number}): void;
     filteringMembers(members: ReadonlyArray<DB.Record<Member.Entity>>): ReadonlyArray<DB.Record<Member.Entity>>;
   };
 
@@ -146,14 +147,14 @@ export module Schedule {
       });    
     }
 
-    public setMember(member: DB.Record<Member.Entity>, options?: {checked?: boolean, position?: number}): void {
-      this.setMemberById(member.id,options);
+    public setMember(r: DB.Record<Entity>, member: DB.Record<Member.Entity>, options?: {checked?: boolean, position?: number}): void {
+      this.setMemberById(r, member.id,options);
     }
 
-    public setMemberById(member_id: string, options?: {checked?: boolean, position?: number}): void {
+    public setMemberById(r: DB.Record<Entity>, member_id: string, options?: {checked?: boolean, position?: number}): void {
       var map: ScheduleMemberMap.Entity | null = this.findMemberMapOf(member_id) || null;
       if(!map){
-        map = ScheduleMemberMap.table.initialize({member_id: member_id});
+        map = ScheduleMemberMap.table.initialize({schedule_id: r.id, member_id: member_id});
         this._members.push(map);
       }
       if(map){
@@ -188,12 +189,16 @@ export module Schedule {
     const newEntity = new EntityImpl({});
     newEntity.startDate = now;
     newEntity.endDate   = new Date(now.getTime() + 7 * 24 * 3600 * 1000 - 1000);
-    return _current ||= table.create(newEntity);
+    // alert(table.first()?.id);
+    _current ||= table.first() || table.create(newEntity);
+    // alert(_current?.entity.members.length);
+    return _current;
   }
 
   export function loadMembersMap(r: DB.Record<Entity>): void {
-    ScheduleMemberMap.table.allOf(r,true).forEach((x) => {
-      r.entity.setMemberById(x.entity.member_id, x.entity);
+    // alert(ScheduleMemberMap.table.allOf(r).length);
+    ScheduleMemberMap.table.allOf(r).forEach((x) => {
+      r.entity.setMemberById(r, x.entity.member_id, x.entity);
     })
   }
 }
