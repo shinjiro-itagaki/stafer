@@ -13,6 +13,7 @@ export module DB {
     readonly id: string;
     readonly entity: E;
     destroy(): boolean;
+    save(): boolean;
   }
 
   type NewRecordArg<E> = {readonly id: string, readonly entity: E, readonly table: Table<E>};
@@ -28,6 +29,10 @@ export module DB {
     }
     public destroy(): boolean {
       return delete_(this.table, this.id);
+    }
+
+    public save(): boolean {
+      return !!this.table.modify(this);
     }
   }
 
@@ -48,6 +53,7 @@ export module DB {
     delete(r: Record<E>): boolean;
     modify(r: Record<E>): Record<E> | null;
     readonly cache: Cache<E>;
+    afterSave(r: Record<E>): void;
   }
 
   class DefaultCache<E extends Entity> implements Cache<E> {
@@ -91,16 +97,27 @@ export module DB {
       return find(this,id);
     }
     public create(e: E): Record<E> | null {
-      return create(this,e);
+      const res: Record<E> | null = create(this,e);
+      if(res){
+        this.afterSave(res);
+      }
+      return res;
     }
     public delete(r: Record<E>): boolean {
       return delete_(this,r.id);
     }
     public modify(r: Record<E>): Record<E> | null {
-      return modify(this,r);
+      const res: Record<E> | null = modify(this,r);
+      if(res){
+        this.afterSave(res);
+      }
+      return res;
     }
     public get cache(): Cache<E> {
       return this._cache;
+    }
+    public afterSave(r: Record<E>): void {
+      // do nothing
     }
   }
 

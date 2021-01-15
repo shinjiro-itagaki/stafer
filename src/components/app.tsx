@@ -5,6 +5,7 @@ import { DB } from "./../../lib/DB";
 
 import { Member } from "./../models/Member";
 import { Schedule } from "./../models/Schedule";
+import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
 
 import { MembersView } from "./MembersView";
 import { Result } from "./Result";
@@ -16,6 +17,15 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   const [allMembers, setAllMembers] = React.useState<ReadonlyArray<DB.Record<Member.Entity>>>(Member.table.all());
 
   const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
+
+  // const posMap : Map<string,number> = new Map<string,number>();
+
+  if(schedule){
+    allMembers.forEach((x,idx) => {
+      // schedule.entity.setMember(x,{position: allMembers.length - idx});
+      schedule.entity.setMember(x);
+    })
+  }
 
   function reCreateSchedule(): void {
     resetSchedule(Schedule.current());
@@ -30,14 +40,11 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   }
 
   function reload(): void{
-    // Member.create({name: "dummy"});
-    // DB.create(Member.klass, {name: "dummy"});
-    // setMembers(DB.all<DB.Record<Member.Entity>>());
     setAllMembers(DB.all(Member.table));
   }
 
   function onChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
-    if(schedule){ Schedule.setMember(schedule, m.id, checked, position) };
+    if(schedule){ schedule.entity.setMember(m, {checked: checked, position: position}) };
   }
 
   var form : HTMLFormElement  | null = null;
@@ -63,20 +70,21 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
 
   function upPosition(member_id: string): void {
     if(schedule){
-      alert(getPositionOf(member_id));
-      Schedule.upPositionOf(schedule,member_id);
-      alert(getPositionOf(member_id));
+      schedule.entity.upPositionOf(member_id);
+      schedule.save();
     }
   }
 
   function downPosition(member_id: string): void {
     if(schedule){
-      Schedule.downPositionOf(schedule,member_id);
+      schedule.entity.downPositionOf(member_id);
     }
   }
 
-  function getPositionOf(member_id: string): number | undefined {
-    return schedule ? Schedule.getPositionOf(schedule,member_id) : undefined;
+  function getMapOf(member_id: string): ScheduleMemberMap.Entity | undefined {
+    // return Math.random();
+    const rtn : ScheduleMemberMap.Entity | undefined = schedule?.entity.findMemberMapOf(member_id);
+    return rtn;
   }
 
   return (
@@ -85,7 +93,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
       <legend>期間</legend>
       <label><input required type="date" ref={(e: HTMLInputElement) => start = e} /></label> 〜 <label><input required type="date" ref={(e: HTMLInputElement) => endee = e} /></label>
       </fieldset>
-      <MembersView allMembers={allMembers} reload={reload} onChecked={onChecked} upPosition={upPosition} downPosition={downPosition} getPositionOf={getPositionOf} />
+      <MembersView allMembers={allMembers} reload={reload} onChecked={onChecked} upPosition={upPosition} downPosition={downPosition} getMapOf={getMapOf} />
       <input type="button" value="作成" onClick={onSubmit} />
       <Result />
     </form>
