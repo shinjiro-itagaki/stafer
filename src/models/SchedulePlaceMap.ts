@@ -1,14 +1,14 @@
 import { DB } from "./../../lib/DB";
 import { Schedule } from "./Schedule";
 
-export module ScheduleMemberMap {
+export module SchedulePlaceMap {
   
   class Table extends DB.AbstractTable<Entity> {
-    public readonly name: string = "schedule_member_map";
+    public readonly name: string = "schedule_place_map";
 
     public toObject(entity: Entity): Object {
       return {
-        member_id: entity.member_id,
+        place_id: entity.place_id,
         schedule_id: entity.schedule_id,
         position: entity.position,
       };
@@ -16,7 +16,7 @@ export module ScheduleMemberMap {
 
     public initialize(obj: Object): Entity {
       return {
-        member_id: String(obj["member_id"]) || "",
+        place_id: String(obj["place_id"]) || "",
         schedule_id: String(obj["schedule_id"]) || "",
         position: Number(obj["position"]) || 1,
         deleteFlag: false,
@@ -31,9 +31,9 @@ export module ScheduleMemberMap {
       return (oncache ? this.cache.all() : this.all()).filter((x: DB.Record<Entity>): boolean => { return x.entity.schedule_id == schedule.id; });
     }
 
-    // public findBy(args: {member_id: string, schedule_id: string}): DB.Record<Entity> | null {
-    //   return this.all().find(function(x: DB.Record<Entity>){ return x.entity.member_id == args.member_id && x.entity.schedule_id == args.schedule_id; }) || null;
-    // }
+    public findBy(args: {place_id: string, schedule_id: string}): DB.Record<Entity> | null {
+      return this.all().find(function(x: DB.Record<Entity>){ return x.entity.place_id == args.place_id && x.entity.schedule_id == args.schedule_id; }) || null;
+    }
 
     public mkFilter(cond: Object): (r: DB.Record<Entity>) => boolean {
       return function(r: DB.Record<Entity>){
@@ -45,7 +45,7 @@ export module ScheduleMemberMap {
   export const table: Table = new Table();
 
   export interface Entity extends DB.Entity {
-    readonly member_id: string;
+    readonly place_id: string;
     readonly schedule_id: string;
     position: number;
     deleteFlag: boolean;

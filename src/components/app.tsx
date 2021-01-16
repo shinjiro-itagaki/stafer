@@ -4,10 +4,13 @@ import * as ReactDOM from "react-dom";
 import { DB } from "./../../lib/DB";
 
 import { Member } from "./../models/Member";
+import { Place } from "./../models/Place";
 import { Schedule } from "./../models/Schedule";
 import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
+import { SchedulePlaceMap } from "./../models/SchedulePlaceMap";
 
 import { MembersView } from "./MembersView";
+import { PlacesView } from "./PlacesView";
 import { Result } from "./Result";
 
 export interface Props extends React.Props<{}> {
@@ -16,14 +19,17 @@ export interface Props extends React.Props<{}> {
 const App: React.FunctionComponent<Props> = (props: Props) => {
   const [allMembers, setAllMembers] = React.useState<ReadonlyArray<DB.Record<Member.Entity>>>(Member.table.all());
 
-  const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
+  const [allPlaces, setAllPlaces] = React.useState<ReadonlyArray<DB.Record<Place.Entity>>>(Place.table.all());
 
-  // const posMap : Map<string,number> = new Map<string,number>();
+  const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
 
   if(schedule){
     allMembers.forEach((x,idx) => {
-      // schedule.entity.setMember(x,{position: allMembers.length - idx});
-      schedule.entity.setMember(schedule,x);
+      schedule.entity.members.setRecord(schedule,x);
+    })
+
+    allPlaces.forEach((x,idx) => {
+      schedule.entity.places.setRecord(schedule,x);
     })
   }
 
@@ -39,12 +45,20 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
     );
   }
 
-  function reload(): void{
-    setAllMembers(DB.all(Member.table));
+  function reloadAllMembers(): void{
+    setAllMembers(Member.table.all());
   }
 
-  function onChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
-    if(schedule){ schedule.entity.setMember(schedule, m, {checked: checked, position: position}) };
+  function reloadAllPlaces(): void{
+    setAllPlaces(Place.table.all());
+  }
+
+  function onMemberChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
+    if(schedule){ schedule.entity.members.setRecord(schedule, m, {checked: checked, position: position}) };
+  }
+
+  function onPlaceChecked(m: DB.Record<Place.Entity>, checked: boolean, position: number): void {
+    if(schedule){ schedule.entity.places.setRecord(schedule, m, {checked: checked, position: position}) };
   }
 
   var form : HTMLFormElement  | null = null;
@@ -68,25 +82,44 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
     return false;
   }
 
-  function upPosition(member_id: string): void {
+  function upMemberPosition(member_id: string): void {
     if(schedule){
-      schedule.entity.upPositionOf(member_id);
+      schedule.entity.members.upPositionOf(member_id);
       schedule.save();
     }
   }
 
-  function downPosition(member_id: string): void {
+  function downMemberPosition(member_id: string): void {
     if(schedule){
-      schedule.entity.downPositionOf(member_id);
+      schedule.entity.members.downPositionOf(member_id);
       schedule.save();
     }
   }
 
-  function getMapOf(member_id: string): ScheduleMemberMap.Entity | undefined {
-    // return Math.random();
-    const rtn : ScheduleMemberMap.Entity | undefined = schedule?.entity.findMemberMapOf(member_id);
+  function getMemberMapOf(member_id: string): ScheduleMemberMap.Entity | undefined {
+    const rtn : ScheduleMemberMap.Entity | undefined = schedule?.entity.members.findMapOf(member_id);
     return rtn;
   }
+
+  function upPlacePosition(place_id: string): void {
+    if(schedule){
+      schedule.entity.places.upPositionOf(place_id);
+      schedule.save();
+    }
+  }
+
+  function downPlacePosition(place_id: string): void {
+    if(schedule){
+      schedule.entity.places.downPositionOf(place_id);
+      schedule.save();
+    }
+  }
+
+  function getPlaceMapOf(place_id: string): SchedulePlaceMap.Entity | undefined {
+    const rtn : SchedulePlaceMap.Entity | undefined = schedule?.entity.places.findMapOf(place_id);
+    return rtn;
+  }
+
 
   return (
     <form ref={(e: HTMLFormElement) => form = e}>
@@ -94,7 +127,8 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
       <legend>期間</legend>
       <label><input required type="date" ref={(e: HTMLInputElement) => start = e} /></label> 〜 <label><input required type="date" ref={(e: HTMLInputElement) => endee = e} /></label>
       </fieldset>
-      <MembersView allMembers={allMembers} reload={reload} onChecked={onChecked} upPosition={upPosition} downPosition={downPosition} getMapOf={getMapOf} />
+      <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} />
+      <PlacesView  allPlaces={allPlaces}   reload={reloadAllPlaces}  onChecked={onPlaceChecked}  upPosition={upPlacePosition}  downPosition={downPlacePosition}  getMapOf={getPlaceMapOf}  />
       <input type="button" value="作成" onClick={onSubmit} />
       <Result />
     </form>
