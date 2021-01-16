@@ -1,8 +1,10 @@
 import { DB } from "./../../lib/DB";
 import { Member } from "./Member";
 import { Place } from "./Place";
+import { Period } from "./Period";
 import { ScheduleMemberMap } from "./ScheduleMemberMap";
 import { SchedulePlaceMap } from "./SchedulePlaceMap";
+import { SchedulePeriodMap } from "./SchedulePeriodMap";
 
 export module Schedule {
   
@@ -32,6 +34,7 @@ export module Schedule {
     private saveMembersMap(schedule: DB.Record<Entity>, e: Entity) {
       e.members.saveRecordsMap(schedule.id);
       e.places.saveRecordsMap(schedule.id);
+      e.periods.saveRecordsMap(schedule.id);
     }
 
     public afterSave(r: DB.Record<Entity>): void {
@@ -220,11 +223,31 @@ export module Schedule {
     }
   }
 
+  class PeriodHasPositionMap extends AbstractHasPositionMap<Period.Entity, SchedulePeriodMap.Entity> {
+
+    protected getFkey(x: SchedulePeriodMap.Entity): string {
+      return x.period_id;
+    }
+
+    protected getScheduleId(x: SchedulePeriodMap.Entity): string {
+      return x.schedule_id;
+    }
+
+    protected initializeRecord(schedule_id: string, record_id: string): SchedulePeriodMap.Entity {
+      return SchedulePeriodMap.table.initialize({schedule_id: schedule_id, period_id: record_id});
+    }
+
+    protected get table(): DB.Table<SchedulePeriodMap.Entity> {
+      return SchedulePeriodMap.table;
+    }
+  }
+
   export interface Entity extends DB.Entity {
     startDate: Date;
     endDate: Date;
     readonly members: HasPositionMap<Member.Entity, ScheduleMemberMap.Entity>;
     readonly places: HasPositionMap<Place.Entity, SchedulePlaceMap.Entity>;
+    readonly periods: HasPositionMap<Period.Entity, SchedulePeriodMap.Entity>;
   };
 
   class EntityImpl implements Entity {
@@ -233,7 +256,9 @@ export module Schedule {
 
     readonly members: HasPositionMap<Member.Entity, ScheduleMemberMap.Entity> = new MemberHasPositionMap(); 
 
-    readonly places: HasPositionMap<Place.Entity, SchedulePlaceMap.Entity> = new PlaceHasPositionMap(); 
+    readonly places: HasPositionMap<Place.Entity, SchedulePlaceMap.Entity> = new PlaceHasPositionMap();
+
+    readonly periods: HasPositionMap<Period.Entity, SchedulePeriodMap.Entity> = new PeriodHasPositionMap();
 
     constructor(obj: Object){
       this.start = new Date(Number(obj["start"]));
@@ -275,6 +300,10 @@ export module Schedule {
 
     SchedulePlaceMap.table.allOf(r).forEach((x) => {
       r.entity.places.setRecordById(r, x.entity.place_id, x.entity);
-    })
+    });
+
+    SchedulePeriodMap.table.allOf(r).forEach((x) => {
+      r.entity.periods.setRecordById(r, x.entity.period_id, x.entity);
+    });
   }
 }

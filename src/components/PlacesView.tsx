@@ -77,6 +77,7 @@ export const PlacesView: React.FunctionComponent<Props> = (props: Props) => {
             </td>
             <td><input type="button" value="削除" onClick={deletePlace} /></td>
             <td>{position}</td>
+            <td>条件</td>
             </tr>);
   });
 //       <th>member ID</th>
@@ -115,7 +116,7 @@ export const PlacesView: React.FunctionComponent<Props> = (props: Props) => {
   return(
       <div>
       <fieldset>
-      <legend>場所の新規作成</legend>
+      <legend>場所</legend>
       <form ref={(e: HTMLFormElement) => form4mkuser = e}>
       <input type="text" ref={(e: HTMLInputElement) => input_username = e} required={true} />
       <input type="button" value="作成" onClick={onSubmitCreatingPlace} />
@@ -127,6 +128,7 @@ export const PlacesView: React.FunctionComponent<Props> = (props: Props) => {
       <th>移動</th>
       <th>削除</th>
       <th>優先度</th>
+      <th>条件指定</th>
       </thead>
       <tbody>{mems}</tbody>
       </table>

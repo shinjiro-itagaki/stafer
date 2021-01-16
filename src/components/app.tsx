@@ -3,14 +3,20 @@ import * as ReactDOM from "react-dom";
 
 import { DB } from "./../../lib/DB";
 
+import { Schedule } from "./../models/Schedule";
+
 import { Member } from "./../models/Member";
 import { Place } from "./../models/Place";
-import { Schedule } from "./../models/Schedule";
+import { Period } from "./../models/Period";
+
 import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
 import { SchedulePlaceMap } from "./../models/SchedulePlaceMap";
+import { SchedulePeriodMap } from "./../models/SchedulePeriodMap";
 
 import { MembersView } from "./MembersView";
 import { PlacesView } from "./PlacesView";
+import { PeriodsView } from "./PeriodsView";
+
 import { Result } from "./Result";
 
 export interface Props extends React.Props<{}> {
@@ -21,15 +27,21 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
 
   const [allPlaces, setAllPlaces] = React.useState<ReadonlyArray<DB.Record<Place.Entity>>>(Place.table.all());
 
+  const [allPeriods, setAllPeriods] = React.useState<ReadonlyArray<DB.Record<Period.Entity>>>(Period.table.all());
+
   const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
 
   if(schedule){
     allMembers.forEach((x,idx) => {
       schedule.entity.members.setRecord(schedule,x);
-    })
+    });
 
     allPlaces.forEach((x,idx) => {
       schedule.entity.places.setRecord(schedule,x);
+    });
+
+    allPeriods.forEach((x,idx) => {
+      schedule.entity.periods.setRecord(schedule,x);
     })
   }
 
@@ -53,12 +65,20 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
     setAllPlaces(Place.table.all());
   }
 
+  function reloadAllPeriods(): void{
+    setAllPeriods(Period.table.all());
+  }
+
   function onMemberChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
     if(schedule){ schedule.entity.members.setRecord(schedule, m, {checked: checked, position: position}) };
   }
 
   function onPlaceChecked(m: DB.Record<Place.Entity>, checked: boolean, position: number): void {
     if(schedule){ schedule.entity.places.setRecord(schedule, m, {checked: checked, position: position}) };
+  }
+
+  function onPeriodChecked(m: DB.Record<Period.Entity>, checked: boolean, position: number): void {
+    if(schedule){ schedule.entity.periods.setRecord(schedule, m, {checked: checked, position: position}) };
   }
 
   var form : HTMLFormElement  | null = null;
@@ -120,6 +140,24 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
     return rtn;
   }
 
+  function upPeriodPosition(period_id: string): void {
+    if(schedule){
+      schedule.entity.periods.upPositionOf(period_id);
+      schedule.save();
+    }
+  }
+
+  function downPeriodPosition(period_id: string): void {
+    if(schedule){
+      schedule.entity.periods.downPositionOf(period_id);
+      schedule.save();
+    }
+  }
+
+  function getPeriodMapOf(period_id: string): SchedulePeriodMap.Entity | undefined {
+    const rtn : SchedulePeriodMap.Entity | undefined = schedule?.entity.periods.findMapOf(period_id);
+    return rtn;
+  }
 
   return (
     <form ref={(e: HTMLFormElement) => form = e}>
@@ -127,6 +165,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
       <legend>期間</legend>
       <label><input required type="date" ref={(e: HTMLInputElement) => start = e} /></label> 〜 <label><input required type="date" ref={(e: HTMLInputElement) => endee = e} /></label>
       </fieldset>
+      <PeriodsView allPeriods={allPeriods} reload={reloadAllPeriods} onChecked={onPeriodChecked} upPosition={upPeriodPosition} downPosition={downPeriodPosition} getMapOf={getPeriodMapOf}  />
       <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} />
       <PlacesView  allPlaces={allPlaces}   reload={reloadAllPlaces}  onChecked={onPlaceChecked}  upPosition={upPlacePosition}  downPosition={downPlacePosition}  getMapOf={getPlaceMapOf}  />
       <input type="button" value="作成" onClick={onSubmit} />
