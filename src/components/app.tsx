@@ -210,7 +210,7 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
       <label><input required type="date" ref={(e: HTMLInputElement) => start = e} /></label> 〜 <label><input required type="date" ref={(e: HTMLInputElement) => endee = e} /></label>
       </fieldset>
       <PeriodsView allPeriods={allPeriods} reload={reloadAllPeriods} onChecked={onPeriodChecked} upPosition={upPeriodPosition} downPosition={downPeriodPosition} getMapOf={getPeriodMapOf} />
-      <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} />
+      <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} allTags={allTags} allTagCategories={allTagCategories} />
       <PlacesView  allPlaces={allPlaces}   reload={reloadAllPlaces}  onChecked={onPlaceChecked}  upPosition={upPlacePosition}  downPosition={downPlacePosition}  getMapOf={getPlaceMapOf}  />
       <TagCategoriesView                   reload={reloadAllTagCategories}                       upPosition={upTagCategoryPosition} downPosition={downTagCategoryPosition} allTagCategories={allTagCategories} />
       <TagsView    allTags={allTags}       reload={reloadAllTags}                                upPosition={upTagPosition}    downPosition={downTagPosition} allTagCategories={allTagCategories} />

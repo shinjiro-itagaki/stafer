@@ -5,10 +5,17 @@ import * as ReactDOM from "react-dom";
 
 import { DB } from "./../../lib/DB";
 import { Member } from "./../models/Member";
+import { Tag } from "./../models/Tag";
+import { TagCategory } from "./../models/TagCategory";
 import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
+// import { MemberTagMap } from "./../models/MemberTagMap";
+
+import { mkSelectTag } from "./traits/Utils";
 
 export interface Props extends React.Props<{}> {
   allMembers: ReadonlyArray<DB.Record<Member.Entity>>;
+  allTags: ReadonlyArray<DB.Record<Tag.Entity>>;
+  allTagCategories: ReadonlyArray<DB.Record<TagCategory.Entity>>;
   reload: () => void;
   onChecked: (m: DB.Record<Member.Entity>, checked: boolean, position: number) => void;
   upPosition(member_id: string);
@@ -55,20 +62,16 @@ export const MembersView: React.FunctionComponent<Props> = (props: Props) => {
 
     function onMemberCheckChanged(e: React.ChangeEvent<HTMLInputElement>): void {
       props.onChecked(m, e.target.checked,position);
-      // props.reload();
-      // if(e.target.checked){
-      //   console.log("checked");
-      //   checkedMembers[m.id] = m;
-      // }else{
-      //   console.log("not checked");
-      //   checkedMembers.delete(m.id);
-      // }
     }
 
     const defaultChecked: boolean = !!map;
 
-//             <td>{m.id}</td>
-// checked={!!checkedMembers.get(m.id)}
+    function onTagCheckChange(tag: DB.Record<Tag.Element>){
+      alert("");
+    }
+
+    const checkBoxes: JSX.Element[] = props.allTags.map((x) => (<label><input type="checkbox" value={x.id} onChange={onTagCheckChange} />{x.entity.label}</label>));
+
     return (<tr>
             <td><label><input defaultChecked={defaultChecked} type="checkbox" onChange={onMemberCheckChanged} />{m.entity.name}({m.id})</label></td>
             <td>
@@ -77,9 +80,9 @@ export const MembersView: React.FunctionComponent<Props> = (props: Props) => {
             </td>
             <td><input type="button" value="削除" onClick={deleteMember} /></td>
             <td>{position}</td>
+            <td>タグ: {checkBoxes}</td>
             </tr>);
   });
-//       <th>member ID</th>
 
 
   function validateCreatingMember(): Member.Entity | null {
@@ -127,6 +130,7 @@ export const MembersView: React.FunctionComponent<Props> = (props: Props) => {
       <th>移動</th>
       <th>削除</th>
       <th>優先度</th>
+      <th>タグ</th>
       </thead>
       <tbody>{mems}</tbody>
       </table>
