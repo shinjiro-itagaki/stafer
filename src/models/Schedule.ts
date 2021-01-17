@@ -6,6 +6,8 @@ import { ScheduleMemberMap } from "./ScheduleMemberMap";
 import { SchedulePlaceMap } from "./SchedulePlaceMap";
 import { SchedulePeriodMap } from "./SchedulePeriodMap";
 
+import { HasPositionMap } from "./traits/HasPositionMap";
+
 export module Schedule {
   
   class Table extends DB.AbstractTable<Entity> {
@@ -53,150 +55,18 @@ export module Schedule {
 
   export const table: Table = new Table();
 
-  export type HasPositionEntity = DB.Entity & {position: number, deleteFlag: boolean};
-
-  export interface HasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity> {
-    readonly list: ReadonlyArray<MAP>;
-    upPositionOf(id: string): void;
-    downPositionOf(id: string): void;
-    findMapOf(id: string): MAP | undefined;
-    getPositionOf(id: string): number | undefined;
-    setRecord(r: DB.Record<Entity>, member: DB.Record<E>, options?: {checked?: boolean, position?: number}): void;
-    setRecordById(r: DB.Record<Entity>, id: string, options?: {checked?: boolean, position?: number}): void;
-    filteringRecords(members: ReadonlyArray<DB.Record<E>>): ReadonlyArray<DB.Record<E>>;
-    findMapBy(args: {record_id: string, schedule_id: string}): DB.Record<MAP> | null;
-    saveRecordsMap(schedule_id: string);
-  }
-
-  abstract class AbstractHasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity> implements HasPositionMap<E, MAP>{
-    protected readonly _list: MAP[] = [];
-
-    protected abstract initializeRecord(schedule_id: string, record_id: string): MAP;
-
-    get list(): ReadonlyArray<MAP> {
-      return this._list;
-    }
-
-    protected abstract getFkey(x: MAP): string;
-    protected abstract getScheduleId(x: MAP): string;
-
-    public findMapOf(id: string): MAP | undefined {
-      return this._list.find((x)=>this.getFkey(x) == id);
-    }
-
-    public getPositionOf(id: string): number | undefined {
-      return this.findMapOf(id)?.position;
-    }
-
-    private sorted(): MAP[] {
-      return this._list.sort((a,b) => b.position - a.position );
-    }
-
-    public upPositionOf(id: string): void {
-      var prev: MAP | null = null;
-      const list: ReadonlyArray<MAP> = this.sorted();
-      const self = this;
-      list.forEach(function(e: MAP, idx: number){
-        const pos: number = list.length - idx;
-        if(self.getFkey(e) == id && prev){
-          e.position = prev.position;
-          prev.position = pos;
-        }else{
-          e.position = pos;
-        }
-        prev = e;
-      });
-      // console.log(list);
-    }
-
-    public downPositionOf(id: string): void {
-      var matched: MAP | null = null;
-      const list: ReadonlyArray<MAP> = this.sorted();
-      const self = this;
-      list.forEach(function(e: MAP, idx: number){
-        const pos: number = list.length - idx;
-        e.position = pos;
-
-        if(self.getFkey(e) == id){
-          matched = e;
-        }else{
-          if(matched){
-            e.position = matched.position;
-            matched.position = pos;
-            matched = null;
-          }
-        }
-      });    
-    }
-
-    public setRecord(r: DB.Record<Entity>, record: DB.Record<E>, options?: {checked?: boolean, position?: number}): void {
-      this.setRecordById(r, record.id,options);
-    }
-
-    public setRecordById(r: DB.Record<Entity>, id: string, options?: {checked?: boolean, position?: number}): void {
-      var map: MAP | null = this.findMapOf(id) || null;
-      if(!map){
-        map = this.initializeRecord(r.id, id);
-        this._list.push(map);
-      }
-      if(map){
-        if(options?.checked !== undefined){
-          map.deleteFlag = options.checked;
-        }
-
-        if(options?.position !== undefined) {
-          map.position = options.position;
-        }
-      }
-    }
-
-    public filteringRecords(list: ReadonlyArray<DB.Record<E>>): ReadonlyArray<DB.Record<E>> {
-      const dict: Map<string, DB.Record<E>> = new Map<string, DB.Record<E>>();
-      list.forEach((x: DB.Record<E>) => {
-        dict.set(x.id,x);
-      });
-
-      return this._list.map((m: MAP): DB.Record<E> | undefined => {
-        return dict.get(this.getFkey(m))
-      }).filter((x) : x is DB.Record<E> => {
-        return !!x
-      });
-    }
-
-    protected abstract get table(): DB.Table<MAP>;
-
-    public findMapBy(args: {record_id: string, schedule_id: string}): DB.Record<MAP> | null {
-      const self = this;
-      return this.table.all().find(function(x: DB.Record<MAP>){ return self.getFkey(x.entity) == args.record_id && self.getScheduleId(x.entity) == args.schedule_id; }) || null;
-    }
-
-    public saveRecordsMap(schedule_id: string) {
-      const self = this;
-      this._list.forEach(function(x: MAP){
-        const rec : DB.Record<MAP> | null = self.findMapBy({record_id: self.getFkey(x), schedule_id: schedule_id});
-        if(rec){
-          // alert(JSON.stringify(rec.entity));
-          rec.entity.position = x.position;
-          rec.save();
-        }else{
-          self.table.create(self.table.initialize({...x, schedule_id: schedule_id}));
-        }
-      });
-    }
-  }
-
-  class MemberHasPositionMap extends AbstractHasPositionMap<Member.Entity, ScheduleMemberMap.Entity> {
+  class MemberHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Member.Entity, ScheduleMemberMap.Entity, Entity> {
 
     protected getFkey(x: ScheduleMemberMap.Entity): string {
       return x.member_id;
     }
 
-    protected getScheduleId(x: ScheduleMemberMap.Entity): string {
+    protected getParentId(x: ScheduleMemberMap.Entity): string {
       return x.schedule_id;
     }
 
-    protected initializeRecord(schedule_id: string, record_id: string): ScheduleMemberMap.Entity {
-      return ScheduleMemberMap.table.initialize({schedule_id: schedule_id, member_id: record_id});
+    protected initializeRecord(schedule_id: string, record_id: string, options?: ScheduleMemberMap.Entity): ScheduleMemberMap.Entity {
+      return ScheduleMemberMap.table.initialize({...options, schedule_id: schedule_id, member_id: record_id});
     }
 
     protected get table(): DB.Table<ScheduleMemberMap.Entity> {
@@ -204,18 +74,18 @@ export module Schedule {
     }
   }
 
-  class PlaceHasPositionMap extends AbstractHasPositionMap<Place.Entity, SchedulePlaceMap.Entity> {
+  class PlaceHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Place.Entity, SchedulePlaceMap.Entity, Entity> {
 
     protected getFkey(x: SchedulePlaceMap.Entity): string {
       return x.place_id;
     }
 
-    protected getScheduleId(x: SchedulePlaceMap.Entity): string {
+    protected getParentId(x: SchedulePlaceMap.Entity): string {
       return x.schedule_id;
     }
 
-    protected initializeRecord(schedule_id: string, record_id: string): SchedulePlaceMap.Entity {
-      return SchedulePlaceMap.table.initialize({schedule_id: schedule_id, place_id: record_id});
+    protected initializeRecord(schedule_id: string, record_id: string, options?: SchedulePlaceMap.Entity): SchedulePlaceMap.Entity {
+      return SchedulePlaceMap.table.initialize({...options, schedule_id: schedule_id, place_id: record_id});
     }
 
     protected get table(): DB.Table<SchedulePlaceMap.Entity> {
@@ -223,18 +93,18 @@ export module Schedule {
     }
   }
 
-  class PeriodHasPositionMap extends AbstractHasPositionMap<Period.Entity, SchedulePeriodMap.Entity> {
+  class PeriodHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Period.Entity, SchedulePeriodMap.Entity, Entity> {
 
     protected getFkey(x: SchedulePeriodMap.Entity): string {
       return x.period_id;
     }
 
-    protected getScheduleId(x: SchedulePeriodMap.Entity): string {
+    protected getParentId(x: SchedulePeriodMap.Entity): string {
       return x.schedule_id;
     }
 
-    protected initializeRecord(schedule_id: string, record_id: string): SchedulePeriodMap.Entity {
-      return SchedulePeriodMap.table.initialize({schedule_id: schedule_id, period_id: record_id});
+    protected initializeRecord(schedule_id: string, record_id: string, options?: SchedulePeriodMap.Entity): SchedulePeriodMap.Entity {
+      return SchedulePeriodMap.table.initialize({...options, schedule_id: schedule_id, period_id: record_id});
     }
 
     protected get table(): DB.Table<SchedulePeriodMap.Entity> {
@@ -245,20 +115,20 @@ export module Schedule {
   export interface Entity extends DB.Entity {
     startDate: Date;
     endDate: Date;
-    readonly members: HasPositionMap<Member.Entity, ScheduleMemberMap.Entity>;
-    readonly places: HasPositionMap<Place.Entity, SchedulePlaceMap.Entity>;
-    readonly periods: HasPositionMap<Period.Entity, SchedulePeriodMap.Entity>;
+    readonly members: HasPositionMap.HasPositionMap<Member.Entity, ScheduleMemberMap.Entity,Entity>;
+    readonly places: HasPositionMap.HasPositionMap<Place.Entity, SchedulePlaceMap.Entity,Entity>;
+    readonly periods: HasPositionMap.HasPositionMap<Period.Entity, SchedulePeriodMap.Entity,Entity>;
   };
 
   class EntityImpl implements Entity {
     private start: Date = new Date(0);
     private end  : Date = new Date(0);
 
-    readonly members: HasPositionMap<Member.Entity, ScheduleMemberMap.Entity> = new MemberHasPositionMap(); 
+    readonly members: HasPositionMap.HasPositionMap<Member.Entity, ScheduleMemberMap.Entity,Entity> = new MemberHasPositionMap(); 
 
-    readonly places: HasPositionMap<Place.Entity, SchedulePlaceMap.Entity> = new PlaceHasPositionMap();
+    readonly places: HasPositionMap.HasPositionMap<Place.Entity, SchedulePlaceMap.Entity,Entity> = new PlaceHasPositionMap();
 
-    readonly periods: HasPositionMap<Period.Entity, SchedulePeriodMap.Entity> = new PeriodHasPositionMap();
+    readonly periods: HasPositionMap.HasPositionMap<Period.Entity, SchedulePeriodMap.Entity,Entity> = new PeriodHasPositionMap();
 
     constructor(obj: Object){
       this.start = new Date(Number(obj["start"]));
