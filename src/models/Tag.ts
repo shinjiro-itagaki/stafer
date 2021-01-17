@@ -1,7 +1,6 @@
 import { DB } from "./../../lib/DB";
 
 import { TagCategory } from "./TagCategory";
-
 import { HasPositionMap } from "./traits/HasPositionMap";
 
 export module Tag {
@@ -37,9 +36,6 @@ export module Tag {
   }
 
   export interface Entity extends DB.Entity, EntityProps {
-    label: string;
-    position: number;
-    category_id?: string;
     category(): DB.Record<TagCategory.Entity> | null;
   };
 
@@ -62,17 +58,9 @@ export module Tag {
     return new EntityImpl(args);
   }
 
-  export class List extends HasPositionMap.AbstractHasPositionList<DB.Record<Entity>> {
-    public getPosition(e: DB.Record<Entity>): number {
-      return e.entity.position;
-    }
-
-    public setPosition(e: DB.Record<Entity>, pos: number): void {
-      e.entity.position =  pos;
-    }
-
-    protected getKey(x: DB.Record<Entity>): string {
-      return x.id;
+  export class List extends HasPositionMap.HasPositionRecordList<Entity> {
+    protected get table(): DB.Table<Entity> {
+      return table;
     }
   }
 }

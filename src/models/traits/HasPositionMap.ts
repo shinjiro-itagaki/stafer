@@ -1,15 +1,22 @@
 import { DB } from "./../../../lib/DB";
 
 export module HasPositionMap {
-  export type HasPositionEntity = DB.Entity & {position: number, deleteFlag: boolean};
+  export type HasPositionEntity = DB.Entity & {position: number};
+  export type HasDeleteFlagEntity = DB.Entity & {deleteFlag: boolean};
+  export type HasPositionAndDeleteFlagEntity = HasPositionEntity & HasDeleteFlagEntity;
 
-  export interface HasPositionList<E> {
+  export interface ReadonlyHasPositionList<E> {
     readonly list: ReadonlyArray<E>;
     upPositionOf(id: string): void;
     downPositionOf(id: string): void;
   }
 
-  export interface HasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> extends HasPositionList<MAP>{
+  export interface HasPositionList<E> extends ReadonlyHasPositionList<E> {
+    reload(): ReadonlyArray<E>;
+    save(): void ;
+  }
+
+  export interface HasPositionMap<E extends DB.Entity, MAP extends HasPositionAndDeleteFlagEntity, P extends DB.Entity> extends ReadonlyHasPositionList<MAP>{
     findMapOf(id: string): MAP | undefined;
     getPositionOf(id: string): number | undefined;
     setRecord(r: DB.Record<P>, member: DB.Record<E>, options?: {checked?: boolean, position?: number}): void;
@@ -19,8 +26,8 @@ export module HasPositionMap {
     saveRecordsMap(parent_id: string);
   }
 
-  export abstract class AbstractHasPositionList<E> implements HasPositionList<E> {
-    protected readonly _list: E[] = [];
+  export abstract class AbstractReadonlyHasPositionList<E> implements ReadonlyHasPositionList<E> {
+    protected _list: E[] = [];
 
     public abstract getPosition(e: E): number;
     public abstract setPosition(e: E,pos: number): void;
@@ -73,7 +80,44 @@ export module HasPositionMap {
     }
   }
 
-  export abstract class AbstractHasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> extends AbstractHasPositionList<MAP> implements HasPositionMap<E, MAP, P>{
+  export abstract class AbstractHasPositionList<E> extends AbstractReadonlyHasPositionList<E> implements HasPositionList<E> {
+    public abstract reload(): ReadonlyArray<E>;
+    public abstract save(): void;
+
+    constructor(){
+      super();
+      this.reload();
+    }
+  }
+
+  export abstract class HasPositionRecordList<E extends HasPositionEntity> extends AbstractHasPositionList<DB.Record<E>> {
+
+    protected abstract get table(): DB.Table<E>;
+
+    public reload(): ReadonlyArray<DB.Record<E>> {
+      return this._list = ([] as DB.Record<E>[]).concat(this.table.all());
+    }
+
+    public save(): void {
+      this._list.forEach(function(e: DB.Record<E>){
+        e.save();
+      });
+    }
+
+    public getPosition(e: DB.Record<E>): number {
+      return e.entity.position;
+    }
+
+    public setPosition(e: DB.Record<E>, pos: number): void {
+      e.entity.position = pos;
+    }
+
+    protected getKey(x: DB.Record<E>): string {
+      return x.id;
+    }    
+  }
+
+  export abstract class AbstractHasPositionMap<E extends DB.Entity, MAP extends HasPositionAndDeleteFlagEntity, P extends DB.Entity> extends AbstractReadonlyHasPositionList<MAP> implements HasPositionMap<E, MAP, P>{
 
     protected abstract initializeRecord(parent_id: string, record_id: string, options?: MAP): MAP;
     protected abstract getParentId(x: MAP): string;

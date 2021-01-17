@@ -9,6 +9,7 @@ import { Member } from "./../models/Member";
 import { Place } from "./../models/Place";
 import { Period } from "./../models/Period";
 import { Tag } from "./../models/Tag";
+import { TagCategory } from "./../models/TagCategory";
 
 import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
 import { SchedulePlaceMap } from "./../models/SchedulePlaceMap";
@@ -18,6 +19,7 @@ import { MembersView } from "./MembersView";
 import { PlacesView } from "./PlacesView";
 import { PeriodsView } from "./PeriodsView";
 import { TagsView } from "./TagsView";
+import { TagCategoriesView } from "./TagCategoriesView";
 
 import { Result } from "./Result";
 
@@ -31,7 +33,13 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
 
   const [allPeriods, setAllPeriods] = React.useState<ReadonlyArray<DB.Record<Period.Entity>>>(Period.table.all());
 
-  const [allTags, setAllTags] = React.useState<ReadonlyArray<DB.Record<Tag.Entity>>>(Tag.table.all());
+  const tagList: Tag.List = new Tag.List();
+
+  const tagCategoryList: TagCategory.List = new TagCategory.List();
+
+  const [allTags, setAllTags] = React.useState<ReadonlyArray<DB.Record<Tag.Entity>>>(tagList.list);
+
+  const [allTagCategories, setAllTagCategories] = React.useState<ReadonlyArray<DB.Record<TagCategory.Entity>>>(tagCategoryList.list);
 
   const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
 
@@ -74,7 +82,11 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   }
 
   function reloadAllTags(): void{
-    setAllTags(Tag.table.all());
+    setAllTags(tagList.reload());
+  }
+
+  function reloadAllTagCategories(): void{
+    setAllTagCategories(tagCategoryList.reload());
   }
 
   function onMemberChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
@@ -168,13 +180,28 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   }
 
   function upTagPosition(tag_id: string): void {
-    // hoge
+    tagList.upPositionOf(tag_id);
+    tagList.save();
+    reloadAllTags();
   }
 
   function downTagPosition(tag_id: string): void {
-    
+    tagList.downPositionOf(tag_id);
+    tagList.save();
+    reloadAllTags();
   }
 
+  function upTagCategoryPosition(tag_id: string): void {
+    tagCategoryList.upPositionOf(tag_id);
+    tagCategoryList.save();
+    reloadAllTagCategories();
+  }
+
+  function downTagCategoryPosition(tag_id: string): void {
+    tagCategoryList.downPositionOf(tag_id);
+    tagCategoryList.save();
+    reloadAllTagCategories();
+  }
 
   return (
     <form ref={(e: HTMLFormElement) => form = e}>
@@ -185,7 +212,8 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
       <PeriodsView allPeriods={allPeriods} reload={reloadAllPeriods} onChecked={onPeriodChecked} upPosition={upPeriodPosition} downPosition={downPeriodPosition} getMapOf={getPeriodMapOf} />
       <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} />
       <PlacesView  allPlaces={allPlaces}   reload={reloadAllPlaces}  onChecked={onPlaceChecked}  upPosition={upPlacePosition}  downPosition={downPlacePosition}  getMapOf={getPlaceMapOf}  />
-      <TagsView    allTags={allTags}       reload={reloadAllTags}                                upPosition={upTagPosition}    downPosition={downTagPosition} />
+      <TagCategoriesView                   reload={reloadAllTagCategories}                       upPosition={upTagCategoryPosition} downPosition={downTagCategoryPosition} allTagCategories={allTagCategories} />
+      <TagsView    allTags={allTags}       reload={reloadAllTags}                                upPosition={upTagPosition}    downPosition={downTagPosition} allTagCategories={allTagCategories} />
       <input type="button" value="作成" onClick={onSubmit} />
       <Result />
     </form>
