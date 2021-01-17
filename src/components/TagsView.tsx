@@ -7,6 +7,8 @@ import { DB } from "./../../lib/DB";
 import { Tag } from "./../models/Tag";
 import { TagCategory } from "./../models/TagCategory";
 
+import { mkSelectTag } from "./traits/Utils";
+
 export interface Props extends React.Props<{}> {
   allTags: ReadonlyArray<DB.Record<Tag.Entity>>;
   allTagCategories: ReadonlyArray<DB.Record<TagCategory.Entity>>;
@@ -44,6 +46,22 @@ export const TagsView: React.FunctionComponent<Props> = (props: Props) => {
       props.reload();
     } 
 
+    var select : HTMLSelectElement | null = null;
+
+    function ref(e: HTMLSelectElement | null): void {
+      select = e;
+    }
+
+    function onCatChange(): void {
+      if(select){
+        const option: HTMLOptionElement | null = select.selectedOptions.item(0);
+        m.entity.category_id = option?.value;
+        m.save();
+      }
+    }
+
+    const selectCat: JSX.Element = mkSelectTag({selectedValue: m.entity.category_id || null, list: props.allTagCategories, mkLabel: (x) => x.entity.label, getValue: (x) => x.id, onEmpty: {}}, {onChange: onCatChange, ref: ref});
+    
     return (<tr>
             <td><label>{m.entity.label}({m.id})</label></td>
             <td>
@@ -52,7 +70,7 @@ export const TagsView: React.FunctionComponent<Props> = (props: Props) => {
             </td>
             <td><input type="button" value="削除" onClick={deleteTag} /></td>
             <td>{position}</td>
-            <td>カテゴリ</td>
+            <td>{selectCat}</td>
             </tr>);
   });
 
