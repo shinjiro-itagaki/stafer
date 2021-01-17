@@ -8,6 +8,7 @@ import { Schedule } from "./../models/Schedule";
 import { Member } from "./../models/Member";
 import { Place } from "./../models/Place";
 import { Period } from "./../models/Period";
+import { Tag } from "./../models/Tag";
 
 import { ScheduleMemberMap } from "./../models/ScheduleMemberMap";
 import { SchedulePlaceMap } from "./../models/SchedulePlaceMap";
@@ -16,6 +17,7 @@ import { SchedulePeriodMap } from "./../models/SchedulePeriodMap";
 import { MembersView } from "./MembersView";
 import { PlacesView } from "./PlacesView";
 import { PeriodsView } from "./PeriodsView";
+import { TagsView } from "./TagsView";
 
 import { Result } from "./Result";
 
@@ -28,6 +30,8 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
   const [allPlaces, setAllPlaces] = React.useState<ReadonlyArray<DB.Record<Place.Entity>>>(Place.table.all());
 
   const [allPeriods, setAllPeriods] = React.useState<ReadonlyArray<DB.Record<Period.Entity>>>(Period.table.all());
+
+  const [allTags, setAllTags] = React.useState<ReadonlyArray<DB.Record<Tag.Entity>>>(Tag.table.all());
 
   const [schedule, resetSchedule] = React.useState<DB.Record<Schedule.Entity> | null>(Schedule.current());
 
@@ -67,6 +71,10 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
 
   function reloadAllPeriods(): void{
     setAllPeriods(Period.table.all());
+  }
+
+  function reloadAllTags(): void{
+    setAllTags(Tag.table.all());
   }
 
   function onMemberChecked(m: DB.Record<Member.Entity>, checked: boolean, position: number): void {
@@ -159,15 +167,25 @@ const App: React.FunctionComponent<Props> = (props: Props) => {
     return rtn;
   }
 
+  function upTagPosition(tag_id: string): void {
+    // hoge
+  }
+
+  function downTagPosition(tag_id: string): void {
+    
+  }
+
+
   return (
     <form ref={(e: HTMLFormElement) => form = e}>
       <fieldset>
       <legend>期間</legend>
       <label><input required type="date" ref={(e: HTMLInputElement) => start = e} /></label> 〜 <label><input required type="date" ref={(e: HTMLInputElement) => endee = e} /></label>
       </fieldset>
-      <PeriodsView allPeriods={allPeriods} reload={reloadAllPeriods} onChecked={onPeriodChecked} upPosition={upPeriodPosition} downPosition={downPeriodPosition} getMapOf={getPeriodMapOf}  />
+      <PeriodsView allPeriods={allPeriods} reload={reloadAllPeriods} onChecked={onPeriodChecked} upPosition={upPeriodPosition} downPosition={downPeriodPosition} getMapOf={getPeriodMapOf} />
       <MembersView allMembers={allMembers} reload={reloadAllMembers} onChecked={onMemberChecked} upPosition={upMemberPosition} downPosition={downMemberPosition} getMapOf={getMemberMapOf} />
       <PlacesView  allPlaces={allPlaces}   reload={reloadAllPlaces}  onChecked={onPlaceChecked}  upPosition={upPlacePosition}  downPosition={downPlacePosition}  getMapOf={getPlaceMapOf}  />
+      <TagsView    allTags={allTags}       reload={reloadAllTags}                                upPosition={upTagPosition}    downPosition={downTagPosition} />
       <input type="button" value="作成" onClick={onSubmit} />
       <Result />
     </form>

@@ -6,6 +6,7 @@ export module Member {
   export interface Entity extends DB.Entity {
     name: string;
     position: number;
+    cost?: number;
   };
 
   class Table extends DB.AbstractTable<Entity> {

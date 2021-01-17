@@ -3,10 +3,13 @@ import { DB } from "./../../../lib/DB";
 export module HasPositionMap {
   export type HasPositionEntity = DB.Entity & {position: number, deleteFlag: boolean};
 
-  export interface HasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> {
-    readonly list: ReadonlyArray<MAP>;
+  export interface HasPositionList<E> {
+    readonly list: ReadonlyArray<E>;
     upPositionOf(id: string): void;
     downPositionOf(id: string): void;
+  }
+
+  export interface HasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> extends HasPositionList<MAP>{
     findMapOf(id: string): MAP | undefined;
     getPositionOf(id: string): number | undefined;
     setRecord(r: DB.Record<P>, member: DB.Record<E>, options?: {checked?: boolean, position?: number}): void;
@@ -16,41 +19,33 @@ export module HasPositionMap {
     saveRecordsMap(parent_id: string);
   }
 
-  export abstract class AbstractHasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> implements HasPositionMap<E, MAP, P>{
-    protected readonly _list: MAP[] = [];
+  export abstract class AbstractHasPositionList<E> implements HasPositionList<E> {
+    protected readonly _list: E[] = [];
 
-    protected abstract initializeRecord(parent_id: string, record_id: string, options?: MAP): MAP;
+    public abstract getPosition(e: E): number;
+    public abstract setPosition(e: E,pos: number): void;
+    protected abstract getKey(x: E): string;
 
-    get list(): ReadonlyArray<MAP> {
+    get list(): ReadonlyArray<E> {
       return this._list;
     }
 
-    protected abstract getFkey(x: MAP): string;
-    protected abstract getParentId(x: MAP): string;
-
-    public findMapOf(id: string): MAP | undefined {
-      return this._list.find((x)=>this.getFkey(x) == id);
-    }
-
-    public getPositionOf(id: string): number | undefined {
-      return this.findMapOf(id)?.position;
-    }
-
-    private sorted(): MAP[] {
-      return this._list.sort((a,b) => b.position - a.position );
+    protected sorted(): E[] {
+      const self = this;
+      return this._list.sort((a,b) => self.getPosition(b) - self.getPosition(a) );
     }
 
     public upPositionOf(id: string): void {
-      var prev: MAP | null = null;
-      const list: ReadonlyArray<MAP> = this.sorted();
+      var prev: E | null = null;
+      const list: ReadonlyArray<E> = this.sorted();
       const self = this;
-      list.forEach(function(e: MAP, idx: number){
+      list.forEach(function(e: E, idx: number){
         const pos: number = list.length - idx;
-        if(self.getFkey(e) == id && prev){
-          e.position = prev.position;
-          prev.position = pos;
+        if(self.getKey(e) == id && prev){
+          self.setPosition(e,self.getPosition(prev));
+          self.setPosition(prev,pos);
         }else{
-          e.position = pos;
+          self.setPosition(e,pos);
         }
         prev = e;
       });
@@ -58,23 +53,46 @@ export module HasPositionMap {
     }
 
     public downPositionOf(id: string): void {
-      var matched: MAP | null = null;
-      const list: ReadonlyArray<MAP> = this.sorted();
+      var matched: E | null = null;
+      const list: ReadonlyArray<E> = this.sorted();
       const self = this;
-      list.forEach(function(e: MAP, idx: number){
+      list.forEach(function(e: E, idx: number){
         const pos: number = list.length - idx;
-        e.position = pos;
+        self.setPosition(e,pos);
 
-        if(self.getFkey(e) == id){
+        if(self.getKey(e) == id){
           matched = e;
         }else{
           if(matched){
-            e.position = matched.position;
-            matched.position = pos;
+            self.setPosition(e,self.getPosition(matched));
+            self.setPosition(matched,pos);
             matched = null;
           }
         }
-      });    
+      });
+    }
+  }
+
+  export abstract class AbstractHasPositionMap<E extends DB.Entity, MAP extends HasPositionEntity, P extends DB.Entity> extends AbstractHasPositionList<MAP> implements HasPositionMap<E, MAP, P>{
+
+    protected abstract initializeRecord(parent_id: string, record_id: string, options?: MAP): MAP;
+    protected abstract getParentId(x: MAP): string;
+    protected abstract get table(): DB.Table<MAP>;
+
+    public getPosition(e: MAP): number {
+      return e.position;
+    }
+
+    public setPosition(e: MAP,pos: number): void {
+      e.position = pos;
+    }
+
+    public findMapOf(id: string): MAP | undefined {
+      return this._list.find((x)=>this.getKey(x) == id);
+    }
+
+    public getPositionOf(id: string): number | undefined {
+      return this.findMapOf(id)?.position;
     }
 
     public setRecord(r: DB.Record<P>, record: DB.Record<E>, options?: {checked?: boolean, position?: number}): void {
@@ -105,29 +123,27 @@ export module HasPositionMap {
       });
 
       return this._list.map((m: MAP): DB.Record<E> | undefined => {
-        return dict.get(this.getFkey(m))
+        return dict.get(this.getKey(m))
       }).filter((x) : x is DB.Record<E> => {
         return !!x
       });
     }
 
-    protected abstract get table(): DB.Table<MAP>;
-
     public findMapBy(args: {record_id: string, parent_id: string}): DB.Record<MAP> | null {
       const self = this;
-      return this.table.all().find(function(x: DB.Record<MAP>){ return self.getFkey(x.entity) == args.record_id && self.getParentId(x.entity) == args.parent_id; }) || null;
+      return this.table.all().find(function(x: DB.Record<MAP>){ return self.getKey(x.entity) == args.record_id && self.getParentId(x.entity) == args.parent_id; }) || null;
     }
 
     public saveRecordsMap(parent_id: string) {
       const self = this;
       this._list.forEach(function(x: MAP){
-        const rec : DB.Record<MAP> | null = self.findMapBy({record_id: self.getFkey(x), parent_id: parent_id});
+        const rec : DB.Record<MAP> | null = self.findMapBy({record_id: self.getKey(x), parent_id: parent_id});
         if(rec){
           // alert(JSON.stringify(rec.entity));
           rec.entity.position = x.position;
           rec.save();
         }else{
-          self.table.create(self.initializeRecord(parent_id, self.getFkey(x), x));
+          self.table.create(self.initializeRecord(parent_id, self.getKey(x), x));
         }
       });
     }

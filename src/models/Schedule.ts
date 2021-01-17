@@ -57,7 +57,7 @@ export module Schedule {
 
   class MemberHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Member.Entity, ScheduleMemberMap.Entity, Entity> {
 
-    protected getFkey(x: ScheduleMemberMap.Entity): string {
+    protected getKey(x: ScheduleMemberMap.Entity): string {
       return x.member_id;
     }
 
@@ -76,7 +76,7 @@ export module Schedule {
 
   class PlaceHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Place.Entity, SchedulePlaceMap.Entity, Entity> {
 
-    protected getFkey(x: SchedulePlaceMap.Entity): string {
+    protected getKey(x: SchedulePlaceMap.Entity): string {
       return x.place_id;
     }
 
@@ -95,7 +95,7 @@ export module Schedule {
 
   class PeriodHasPositionMap extends HasPositionMap.AbstractHasPositionMap<Period.Entity, SchedulePeriodMap.Entity, Entity> {
 
-    protected getFkey(x: SchedulePeriodMap.Entity): string {
+    protected getKey(x: SchedulePeriodMap.Entity): string {
       return x.period_id;
     }
 

@@ -5,6 +5,9 @@ export module Place {
   export interface Entity extends DB.Entity {
     name: string;
     position: number;
+    cost?: number;
+    max?: number; // 配置数の上限
+    min?: number; // 配置数の下限（必要人数）
   };
 
   class Table extends DB.AbstractTable<Entity> {

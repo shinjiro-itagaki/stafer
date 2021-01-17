@@ -1,16 +1,21 @@
 import { DB } from "./../../lib/DB";
 
+import { TagCategory } from "./TagCategory";
+
+import { HasPositionMap } from "./traits/HasPositionMap";
+
 export module Tag {
   
   class Table extends DB.AbstractTable<Entity> {
     public readonly name: string = "tags";
 
     public toObject(entity: Entity): Object {
-      return {label: entity.label};
+      return {label: entity.label, position: entity.position, category_id: entity.category_id};
     }
 
     public initialize(obj: Object): Entity {
-      return {label: String(obj["label"] || "")};
+      const catid: string | undefined = obj["category_id"];
+      return new EntityImpl({label: String(obj["label"] || ""), position: Number(obj["position"] || 1), category_id: catid ? String(catid) : undefined});
     }
 
     public mkFilter(cond: Object): (r: DB.Record<Entity>) => boolean {
@@ -23,10 +28,52 @@ export module Tag {
     }
   }
 
-  const table: Table = new Table();
+  export const table: DB.Table<Entity> = new Table();
 
-  export interface Entity extends DB.Entity {
+  export interface EntityProps {
     label: string;
+    position: number;
+    category_id?: string;
+  }
+
+  export interface Entity extends DB.Entity, EntityProps {
+    label: string;
+    position: number;
+    category_id?: string;
+    category(): DB.Record<TagCategory.Entity> | null;
   };
+
+  class EntityImpl implements Entity {
+    public label: string;
+    public category_id?: string;
+    public position: number;
+    public category(): DB.Record<TagCategory.Entity> | null {
+      return this.category_id ? TagCategory.table.find(this.category_id) : null;
+    }
+    
+    constructor(args: EntityProps){
+      this.label = args.label;
+      this.category_id = args.category_id;
+      this.position = args.position;
+    }
+  }
+
+  export function mkEntity(args: EntityProps): Entity {
+    return new EntityImpl(args);
+  }
+
+  export class List extends HasPositionMap.AbstractHasPositionList<DB.Record<Entity>> {
+    public getPosition(e: DB.Record<Entity>): number {
+      return e.entity.position;
+    }
+
+    public setPosition(e: DB.Record<Entity>, pos: number): void {
+      e.entity.position =  pos;
+    }
+
+    protected getKey(x: DB.Record<Entity>): string {
+      return x.id;
+    }
+  }
 }
 
